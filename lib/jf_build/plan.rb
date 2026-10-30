@@ -6,7 +6,7 @@ module JFBuild
     REQUIRED = {
       'pgyer' => { 'api_key' => 'API Key' },
       'appstore' => { 'key_id' => 'Key ID', 'issuer_id' => 'Issuer ID', 'key_file' => 'P8 授权文件' },
-      'bugly' => { 'app_id' => 'App ID', 'app_key' => 'App Key', 'tool_path' => '符号表上传工具路径' },
+      'bugly' => { 'app_id' => 'App ID', 'app_key' => 'App Key' },
       'dingtalk' => { 'webhook' => 'Webhook' }
     }.freeze
     attr_reader :mode, :configuration, :export_method, :states
@@ -89,10 +89,16 @@ module JFBuild
       end
       data = @config.section(name)
       missing = REQUIRED.fetch(name).select { |key, _label| data[key].to_s.strip.empty? }.values
+      if name == 'bugly' && data['tool_type'] == 'pro' && data['tool_path'].to_s.strip.empty?
+        missing << '专业版符号表上传工具路径'
+      end
       if name == 'pgyer' && data.fetch('install_type', 2).to_s == '2' && !data['api_key'].to_s.empty? && data['password'].to_s.empty?
         missing << '安装密码'
       end
-      return entry(name, mandatory ? 'error' : 'skipped', "未配置 #{missing.join('、')}") unless missing.empty?
+      unless missing.empty?
+        reason = name == 'dingtalk' ? '未配置机器人' : "未配置 #{missing.join('、')}"
+        return entry(name, mandatory ? 'error' : 'skipped', reason)
+      end
       entry(name, 'ready')
     rescue Error => error
       entry(name, mandatory ? 'error' : 'skipped', error.message)

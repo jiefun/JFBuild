@@ -15,7 +15,13 @@ module JFBuild
       parts = entries.map do |entry|
         text = entry.fetch('label')
         reason = entry['reason'].to_s.gsub(/[\r\n]+/, ' ')
-        text += compact ? '（跳过）' : "（#{reason}，跳过该步骤）" if entry['status'] == 'skipped'
+        if entry['status'] == 'skipped'
+          text += if entry['name'] == 'dingtalk'
+                    "（跳过#{reason.empty? ? '' : '，' + reason}）"
+                  else
+                    compact ? '（跳过）' : "（#{reason}，跳过该步骤）"
+                  end
+        end
         text += compact ? '（缺少配置）' : "（#{reason}，此流程无法开始）" if entry['status'] == 'error'
         text += '（成功）' if entry['status'] == 'success'
         text += compact ? '（失败）' : "（失败#{reason.empty? ? '' : '：' + reason}）" if entry['status'] == 'failed'

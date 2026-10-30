@@ -149,6 +149,8 @@ module JFBuild
   end
 
   class BuglyUpload
+    BUNDLED_TOOL = File.expand_path('../../tools/buglyqq-upload-symbol.jar', __dir__).freeze
+    LEGACY_TOOL = 'jfbuild/tools/buglyqq-upload-symbol.jar'.freeze
     SUCCESS = '(?i)(upload(?:ed)?[^\\n]*(?:success|succeed)|success(?:fully)?[^\\n]*upload|上传[^\\n]*成功)'.freeze
     FAILURE = '(?i)(upload[^\\n]*(?:failed|failure)|上传[^\\n]*失败|\\[.*(?:error|symtab-e).*\\])'.freeze
 
@@ -157,10 +159,10 @@ module JFBuild
     end
 
     def validate!
-      data = @config.require_values('bugly', 'app_id', 'app_key', 'tool_path')
-      @config.file(data['tool_path'], label: 'Bugly 官方符号表上传工具')
-      @config.executable(data.fetch('java_path', 'java'), label: 'Java')
+      data = @config.require_values('bugly', 'app_id', 'app_key')
       raise Error, 'bugly.tool_type 只能为 classic 或 pro。' unless %w[classic pro].include?(data.fetch('tool_type', 'classic'))
+      tool_path
+      @config.executable(data.fetch('java_path', 'java'), label: 'Java')
     end
 
     def upload(symbols, info)
@@ -171,24 +173,36 @@ module JFBuild
                    '-platform', 'IOS', '-inputSymbol', symbols]
       arguments += ['-bundleid', info.fetch('CFBundleIdentifier')] if data.fetch('tool_type', 'classic') == 'classic'
       command = [@config.executable(data.fetch('java_path', 'java'), label: 'Java'),
-                 '-jar', @config.file(data['tool_path'], label: 'Bugly 官方符号表上传工具'), *arguments]
+                 '-jar', tool_path, *arguments]
       result = @runner.run(command, label: '上传 Bugly 符号表', capture: true)
       raise Error, 'Bugly 工具报告上传失败，详情见日志。' if result.match?(Regexp.new(FAILURE))
       success = result.match?(Regexp.new(SUCCESS))
-      if data['tool_type'] == 'pro'
-        responses = result.lines.map do |line|
-          start = line.index('{')
-          next unless start
-          parsed = JSON.parse(line[start..-1]) rescue nil
-          parsed if parsed.is_a?(Hash) && parsed.key?('statusCode')
-        end.compact
-        unless responses.empty?
-          raise Error, 'Bugly 专业版返回上传业务失败，详情见日志。' unless responses.last['statusCode'] == 0
-          success ||= result.include?('/uploadFile')
-        end
+      responses = result.lines.map do |line|
+        start = line.index('{')
+        next unless start
+        parsed = JSON.parse(line[start..-1]) rescue nil
+        parsed if parsed.is_a?(Hash) && parsed.key?('statusCode')
+      end.compact
+      unless responses.empty?
+        raise Error, 'Bugly 返回上传业务失败，详情见日志。' unless responses.last['statusCode'] == 0
+        success ||= result.include?('/uploadFile')
       end
       raise Error, 'Bugly 未给出可确认的上传成功结果，请核对工具日志。' unless success
       { 'status' => 'uploaded' }
+    end
+
+    private
+
+    def tool_path
+      data = @config.section('bugly')
+      path = data['tool_path'].to_s.strip
+      if data.fetch('tool_type', 'classic') == 'classic'
+        # 兼容旧模板的默认路径；已放置的工具和自定义路径优先。
+        path = BUNDLED_TOOL if path.empty? || (path == LEGACY_TOOL && !File.exist?(@config.absolute(path)))
+      elsif path.empty?
+        raise Error, '请填写 bugly.tool_path，指定专业版符号表上传工具。'
+      end
+      @config.file(path, label: 'Bugly 官方符号表上传工具')
     end
   end
 

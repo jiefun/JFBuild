@@ -9,7 +9,7 @@ require 'securerandom'
 module JFBuild
   class Config
     DIRECTORY = 'jfbuild'.freeze
-    MATERIAL_DIRECTORIES = %w[signing keys tools].freeze
+    MATERIAL_DIRECTORIES = %w[keys tools].freeze
     TEMPLATE = File.expand_path('../../templates/config.yml', __dir__)
     LAUNCHER_TEMPLATE = File.expand_path('../../templates/jbuild', __dir__)
     LEGACY_LAUNCHER = <<~'SH'.freeze

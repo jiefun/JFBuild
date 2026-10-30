@@ -45,14 +45,14 @@ signing:
   allow_provisioning_updates: true
 
   # 本机没有所需签名证书时填写 P12 路径；已有可用证书时留空。
-  # 在 Xcode > Settings > Accounts > Manage Certificates 中导出含私钥的证书，放入 jfbuild/signing/。
+  # 在 Xcode > Settings > Accounts > Manage Certificates 中导出含私钥的证书；可自行创建 jfbuild/signing/ 存放。
   # 示例：p12: jfbuild/signing/distribution.p12；p12_password 填导出时设置的密码，数字密码用引号。
   # 多个证书可填列表，例如 [{path: jfbuild/signing/dev.p12, password: '1234'}, {path: jfbuild/signing/dist.p12, password: '5678'}]。
   p12:
   p12_password: ''
 
   # 要安装的描述文件路径列表；本机已安装时保留 []。
-  # 从 Apple Developer 的 Certificates, Identifiers & Profiles > Profiles 下载，放入 jfbuild/signing/。
+  # 从 Apple Developer 的 Certificates, Identifiers & Profiles > Profiles 下载；可自行创建 jfbuild/signing/ 存放。
   # 示例：profiles: ['jfbuild/signing/dev.mobileprovision', 'jfbuild/signing/release.mobileprovision']。
   profiles: []
 
@@ -88,9 +88,10 @@ bugly:
   app_id:
   app_key:
 
-  # 从对应版本的 Bugly 官方符号表文档下载上传工具 JAR，放入 jfbuild/tools/，tool_path 填文件路径。
-  # tool_type 填 classic（经典版）或 pro（专业版），与下载的工具版本对应。
-  tool_path: jfbuild/tools/buglyqq-upload-symbol.jar
+  # tool_type 填 classic（经典版）或 pro（专业版）。经典版默认使用组件内置 JAR，tool_path 留空即可。
+  # 专业版或替换工具时，从对应的 Bugly 官方文档下载 JAR，放入 jfbuild/tools/，在 tool_path 填实际路径。
+  # 示例：tool_path: jfbuild/tools/buglyqq-upload-symbol.jar。
+  tool_path:
   tool_type: classic
 
   # 已配置 Java 环境时填 java；否则填写 Java 可执行文件路径，例如 /Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java。

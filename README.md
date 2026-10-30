@@ -27,14 +27,13 @@ App项目/
 ├── jbuild                  # 命令入口，由 init 生成
 ├── jfbuild/
 │   ├── config.yml          # 配置文件，由 init 生成
-│   ├── signing/            # P12 证书、描述文件（.mobileprovision）
 │   ├── keys/               # App Store Connect 的 P8 密钥
-│   └── tools/              # Bugly 上传工具 JAR
+│   └── tools/              # 可选的自定义上传工具
 └── build/
     └── jbuild/             # 打包生成的归档、IPA、dSYM 和日志
 ```
 
-`signing/`、`keys/`、`tools/` 由 `init` 创建，各含一个用于保留空目录的 `.gitkeep`。将所需材料放入对应目录，再在配置中填写路径。`build/jbuild/` 在打包时生成，可加入 `.gitignore`。
+`keys/`、`tools/` 由 `init` 创建，各含一个用于保留空目录的 `.gitkeep`。将所需材料放入对应目录，再在配置中填写路径。需要导入 P12 或描述文件时，可自行创建 `jfbuild/signing/` 存放；本机已有签名材料时无需创建。`build/jbuild/` 在打包时生成，可加入 `.gitignore`。
 
 工程、Scheme、平台凭证和材料路径都填写在 `jfbuild/config.yml`，字段说明见[配置模板](templates/config.yml)。例如证书放在 `jfbuild/signing/distribution.p12`，`signing.p12` 就填写这个路径。`jfbuild/` 不添加到 App Target 的资源中。
 
@@ -89,8 +88,10 @@ App项目/
 | 签名 | Team ID、P12、密码、描述文件；已安装的签名材料可直接使用 |
 | 蒲公英 | API Key、安装方式、安装密码 |
 | App Store | Key ID、Issuer ID、P8 文件路径 |
-| Bugly | App ID、App Key、官方上传 JAR、classic／pro 类型 |
+| Bugly | App ID、App Key；经典版内置上传 JAR，专业版另填工具路径 |
 | 钉钉 | Webhook，按机器人设置填写 Secret 或关键词 |
+
+Bugly 经典版默认使用组件内置工具，需要 Java；无需向 App 项目复制 JAR。`bugly.tool_path` 可指定其他工具覆盖默认值，专业版需配置对应的 JAR。内置工具仅保留在 Pod 工具目录，相关声明见 [tools/NOTICE.md](tools/NOTICE.md)。
 
 材料获取入口：[Apple 签名证书](https://developer.apple.com/documentation/xcode/sharing-your-teams-signing-certificates)、[Apple 描述文件](https://developer.apple.com/help/account/provisioning-profiles/edit-download-or-delete-profiles/)、[App Store API 密钥](https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api/)、[蒲公英 API](https://www.pgyer.com/doc/view/api)、[Bugly 专业版符号表工具](https://bugly.tds.tencent.com/docs/tutorial/symbol/tool/)、[钉钉群自定义机器人](https://opensource.dingtalk.com/developerpedia/docs/learn/bot/overview/)。
 
