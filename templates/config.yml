@@ -32,6 +32,14 @@ modes:
     configuration: Release
     export_method: app-store-connect
 
+hooks:
+  # 新归档前执行；留空不执行。可按 dev、release、appstore 分别配置。
+  # 命令由 /bin/sh 执行，工作目录为项目根目录；非零退出码会停止归档，日志保存在 logs/ 中。
+  before_archive:
+    # appstore: "sh jfbuild/scripts/before_appstore.sh"
+  # 脚本可读取 JBUILD_MODE（包类型）、JBUILD_CONFIGURATION（构建配置）。
+  # 如需覆盖本次归档的 Xcode 构建参数，将 KEY = VALUE 写入 JBUILD_XCCONFIG_FILE 指向的临时文件。
+
 signing:
   # 导出 IPA 的签名方式：project 沿用工程，automatic 自动签名，manual 手动指定描述文件。
   style: project

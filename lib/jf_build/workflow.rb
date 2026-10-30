@@ -35,6 +35,7 @@ module JFBuild
           # 通过前置检查后再清理旧归档。
           @build.resolve!
           @build.validate_signing!
+          config.archive_hook(mode)
           @catalog.prune_before_new!.each { |path| @io.puts("已清理最旧打包记录：#{path}") }
           @record = @catalog.create(mode, settings, directory: output, description: @runner.redact(description),
                                     builder: @report['builder'])

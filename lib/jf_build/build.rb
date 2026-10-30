@@ -52,7 +52,10 @@ module JFBuild
       command << "DEVELOPMENT_TEAM=#{team}" unless team.empty?
       clean = CLEAN_MODES.include?(mode)
       actions = clean ? %w[clean archive] : ['archive']
-      runner.run(command + provisioning_arguments + actions, label: clean ? '清理并归档' : '归档', chdir: config.root)
+      signing_arguments = provisioning_arguments
+      with_archive_hook(mode) do |arguments|
+        runner.run(command + arguments + signing_arguments + actions, label: clean ? '清理并归档' : '归档', chdir: config.root)
+      end
       app_in_archive(path)
       path
     end
@@ -157,6 +160,22 @@ module JFBuild
     end
 
     private
+
+    def with_archive_hook(mode)
+      command = config.archive_hook(mode)
+      return yield([]) unless command
+      # 脚本可写入本次归档的构建参数，执行结束后移除临时文件。
+      Tempfile.create(['jbuild-', '.xcconfig']) do |file|
+        runner.run(['/bin/sh', '-c', command], label: '归档前脚本', chdir: config.root, env: {
+          'JBUILD_MODE' => mode,
+          'JBUILD_CONFIGURATION' => config.mode(mode).fetch('configuration'),
+          'JBUILD_XCCONFIG_FILE' => file.path
+        })
+        raise Error, '归档前脚本的临时 Xcode 配置文件不可读取。' unless File.file?(file.path) && File.readable?(file.path)
+        arguments = File.read(file.path).strip.empty? ? [] : ['-xcconfig', file.path]
+        yield(arguments)
+      end
+    end
 
     def compatible_method(method)
       @help ||= runner.run(['xcodebuild', '-help'], label: '读取导出方法', capture: true)

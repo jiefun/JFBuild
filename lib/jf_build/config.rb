@@ -130,6 +130,18 @@ module JFBuild
       value
     end
 
+    def archive_hook(mode)
+      hooks = section('hooks')['before_archive']
+      return nil if hooks.nil?
+      raise Error, 'hooks.before_archive 必须按 dev、release、appstore 配置命令。' unless hooks.is_a?(Hash)
+      unknown = hooks.keys - %w[dev release appstore]
+      raise Error, "hooks.before_archive 存在未知包类型：#{unknown.join('、')}。" unless unknown.empty?
+      command = hooks[mode]
+      return nil if command.nil?
+      raise Error, "hooks.before_archive.#{mode} 必须是 Shell 命令字符串。" unless command.is_a?(String)
+      command.strip.empty? ? nil : command
+    end
+
     def section(name)
       value = resolved_data[name] || {}
       raise Error, "#{name} 必须是配置对象。" unless value.is_a?(Hash)

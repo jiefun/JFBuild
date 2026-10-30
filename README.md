@@ -111,6 +111,26 @@ Bugly 经典版默认使用组件内置工具，需要 Java；无需向 App 项�
 
 可使用 `--no-pgyer`、`--no-bugly`、`--no-dingtalk` 跳过本次对应步骤。
 
+### 归档前脚本
+
+在 `hooks.before_archive` 中按包类型配置 Shell 命令，未配置则跳过：
+
+```yaml
+hooks:
+  before_archive:
+    appstore: "sh jfbuild/scripts/before_appstore.sh"
+```
+
+将脚本放在项目的 `jfbuild/scripts/` 中。命令由 `/bin/sh` 执行，工作目录为项目根目录；仅新归档时执行，已有归档导出、IPA 补传均不执行。脚本失败会停止归档，详情见当次 `logs/` 下的“归档前脚本”日志。
+
+脚本可读取 `JBUILD_MODE`（`dev`、`release`、`appstore`）和 `JBUILD_CONFIGURATION`。需要设置仅对本次归档生效的 Xcode 构建参数时，可写入 `$JBUILD_XCCONFIG_FILE`，例如：
+
+```sh
+printf 'MY_BUILD_SETTING = value\n' >> "$JBUILD_XCCONFIG_FILE"
+```
+
+JFBuild 将该文件通过 `xcodebuild -xcconfig` 传入，归档结束后移除；未写入内容时不传入。
+
 ## 历史归档
 
 菜单 `4` 按创建时间列出历史记录，包含包类型、版本、构建号、时间和当次归档的更新内容。选中后可重新导出 IPA，或上传该记录中已有的 IPA。
