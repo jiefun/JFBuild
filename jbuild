@@ -1,0 +1,3 @@
+#!/usr/bin/ruby
+require_relative 'lib/jf_build'
+exit(catch(:cli_exit) { JFBuild::CLI.new(ARGV).run })

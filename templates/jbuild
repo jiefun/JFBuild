@@ -1,0 +1,26 @@
+#!/usr/bin/ruby
+require 'yaml'
+
+project_root = File.expand_path(__dir__)
+lockfile = ['Pods/Manifest.lock', 'Podfile.lock'].map { |path| File.join(project_root, path) }.find { |path| File.file?(path) }
+source = {}
+if lockfile
+  begin
+    lock = YAML.safe_load(File.read(lockfile), permitted_classes: [Symbol], aliases: true)
+    source = lock.fetch('EXTERNAL SOURCES', {}).fetch('JFBuild', {})
+    raise TypeError unless source.is_a?(Hash)
+  rescue Psych::Exception, NoMethodError, TypeError
+    warn '无法读取 Pod 安装记录，请在项目目录重新执行 pod install。'
+    exit 1
+  end
+end
+
+local_path = source[:path] || source['path']
+tool_root = local_path.to_s.empty? ? File.join(project_root, 'Pods/JFBuild') : File.expand_path(local_path.to_s, project_root)
+tool = File.join(tool_root, 'jbuild')
+unless File.file?(tool) && File.realpath(tool) != File.realpath(__FILE__)
+  warn '未找到 JFBuild，请确认本地源码路径有效，并在项目目录执行 pod install。'
+  exit 1
+end
+
+exec('/usr/bin/ruby', tool, "--root=#{project_root}", *ARGV)

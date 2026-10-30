@@ -1,0 +1,12 @@
+.DS_Store
+
+/build/
+/jfbuild/
+.env
+.env.*
+*.p8
+*.p12
+*.pfx
+*.mobileprovision
+__pycache__/
+*.pyc

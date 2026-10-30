@@ -1,0 +1,109 @@
+# 文件路径相对于项目根目录，也支持绝对路径和 ~/。
+
+# 配置文件格式版本，需升级格式时执行 ./jbuild config update。
+config_version: 2
+
+# 整个项目保留的有效归档份数，所有包类型合计；例如 2 表示保留最近两份。
+keep_archives: 2
+
+# workspace 和 project 二选一。
+# 有 .xcworkspace 时填写 workspace，例如 MyApp.xcworkspace；否则填写 project，例如 MyApp.xcodeproj。
+workspace:
+project:
+
+# 填 Xcode 中的共享 Scheme 名称，例如 MyApp。
+# 在 Product > Scheme > Manage Schemes 中勾选 Shared；init 会识别唯一值或列出候选。
+scheme:
+
+# configuration 填工程已有的构建配置名称；export_method 决定导出 IPA 的分发方式。
+modes:
+  # 开发包：Debug 构建，导出开发调试用 IPA。
+  dev:
+    configuration: Debug
+    export_method: debugging
+
+  # 正式验收包：Release 构建，导出供已登记设备安装的 Ad Hoc IPA。
+  release:
+    configuration: Release
+    export_method: release-testing
+
+  # App Store 包：Release 构建，导出用于上传 App Store Connect 的 IPA。
+  appstore:
+    configuration: Release
+    export_method: app-store-connect
+
+signing:
+  # 导出 IPA 的签名方式：project 沿用工程，automatic 自动签名，manual 手动指定描述文件。
+  style: project
+
+  # Apple 开发者团队 ID，例如 ABCDE12345；登录 Apple Developer，在 Membership details 中查看。
+  # 留空时沿用工程中的 Team。
+  team_id:
+
+  # true 允许 Xcode 联网更新描述文件；false 使用本机已有材料。
+  # 启用时需在 Xcode 登录开发者账号，或配置下方具备签名权限的 App Store API 密钥。
+  allow_provisioning_updates: true
+
+  # 本机没有所需签名证书时填写 P12 路径；已有可用证书时留空。
+  # 在 Xcode > Settings > Accounts > Manage Certificates 中导出含私钥的证书，放入 jfbuild/signing/。
+  # 示例：p12: jfbuild/signing/distribution.p12；p12_password 填导出时设置的密码，数字密码用引号。
+  # 多个证书可填列表，例如 [{path: jfbuild/signing/dev.p12, password: '1234'}, {path: jfbuild/signing/dist.p12, password: '5678'}]。
+  p12:
+  p12_password: ''
+
+  # 要安装的描述文件路径列表；本机已安装时保留 []。
+  # 从 Apple Developer 的 Certificates, Identifiers & Profiles > Profiles 下载，放入 jfbuild/signing/。
+  # 示例：profiles: ['jfbuild/signing/dev.mobileprovision', 'jfbuild/signing/release.mobileprovision']。
+  profiles: []
+
+  # style 为 manual 时，按包类型填写“Bundle ID: 描述文件名称或 UUID”；文件路径填在上面的 profiles。
+  # 示例：dev: {'com.example.app': 'MyApp Development'}；名称与 Apple Developer 中的描述文件名称对应。
+  # 含扩展 Target 时，将主 App 和各扩展的 Bundle ID 分别列入对应映射。
+  provisioning_profiles:
+    dev: {}
+    release: {}
+    appstore: {}
+
+pgyer:
+  # 蒲公英控制台“API 信息”中的 API Key；不上传蒲公英时留空。
+  api_key: ''
+
+  # 安装方式：1 公开、2 密码、3 邀请；选择 2 时还需填写 password。
+  # password 是安装 IPA 时输入的密码，默认 'jf123'，可修改；数字密码使用引号保留前导 0。
+  install_type: 2
+  password: 'jf123'
+
+appstore:
+  # App Store Connect > 用户和访问 > 集成 > App Store Connect API > 团队密钥。
+  # 创建有构建上传权限的团队 API 密钥，记录 Key ID、Issuer ID，并下载 P8 文件。
+  # key_id 填密钥 ID；issuer_id 填发行者 ID；P8 放入 jfbuild/keys/，key_file 填实际文件路径。
+  # 示例路径：jfbuild/keys/AuthKey_ABCDE12345.p8。
+  key_id:
+  issuer_id:
+  key_file: jfbuild/keys/AuthKey_你的KeyID.p8
+
+bugly:
+  # 在 Bugly 中选择对应的 iOS 应用／产品，在应用设置或“设置 > 产品信息”中查看 App ID 和 App Key。
+  # 不上传 dSYM 时留空；填好后，Release 构建会上传对应符号表。
+  app_id:
+  app_key:
+
+  # 从对应版本的 Bugly 官方符号表文档下载上传工具 JAR，放入 jfbuild/tools/，tool_path 填文件路径。
+  # tool_type 填 classic（经典版）或 pro（专业版），与下载的工具版本对应。
+  tool_path: jfbuild/tools/buglyqq-upload-symbol.jar
+  tool_type: classic
+
+  # 已配置 Java 环境时填 java；否则填写 Java 可执行文件路径，例如 /Library/Java/JavaVirtualMachines/jdk-21.jdk/Contents/Home/bin/java。
+  java_path: java
+
+dingtalk:
+  # 在接收通知的钉钉群中添加“自定义机器人”，将完整 Webhook 地址填入 webhook；不通知时留空。
+  # 机器人选择“加签”时，将对应签名密钥填入 secret；选择“自定义关键词”时，在 keyword 填一个匹配的词。
+  # keyword 会加入通知正文；未使用的安全方式对应字段可留空。
+  webhook:
+  secret:
+  keyword:
+
+output:
+  # 归档、IPA、dSYM 和日志的输出目录，默认位于 App 项目的 build/jbuild/。
+  directory: build/jbuild
