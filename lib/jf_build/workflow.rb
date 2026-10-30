@@ -215,12 +215,15 @@ module JFBuild
 
     def build_info_lines
       [['打包人', @report['builder']], ['构建类型', @report['configuration']]].map do |label, value|
-        "#{label}：#{value.to_s.strip.empty? ? '未记录' : value}"
-      end
+        value = value.to_s.strip
+        "#{label}：#{value}" unless value.empty?
+      end.compact
     end
 
     def build_description(description)
-      (build_info_lines + ['', '更新内容：', description.to_s]).join("\n")
+      lines = build_info_lines
+      return description.to_s if lines.empty?
+      (lines + ['', '更新内容：', description.to_s]).join("\n")
     end
 
     def summarize(info)
