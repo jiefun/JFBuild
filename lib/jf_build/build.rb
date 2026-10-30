@@ -4,6 +4,7 @@ require 'securerandom'
 module JFBuild
   class Build
     MODES = %w[dev release appstore].freeze
+    CLEAN_MODES = %w[release appstore].freeze
     METHOD_ALIASES = { 'debugging' => 'development', 'release-testing' => 'ad-hoc', 'app-store-connect' => 'app-store' }.freeze
     attr_reader :config, :runner
 
@@ -49,7 +50,9 @@ module JFBuild
                  '-destination', 'generic/platform=iOS', '-archivePath', path, 'DEBUG_INFORMATION_FORMAT=dwarf-with-dsym']
       team = config.section('signing')['team_id'].to_s
       command << "DEVELOPMENT_TEAM=#{team}" unless team.empty?
-      runner.run(command + provisioning_arguments + ['archive'], label: '归档', chdir: config.root)
+      clean = CLEAN_MODES.include?(mode)
+      actions = clean ? %w[clean archive] : ['archive']
+      runner.run(command + provisioning_arguments + actions, label: clean ? '清理并归档' : '归档', chdir: config.root)
       app_in_archive(path)
       path
     end

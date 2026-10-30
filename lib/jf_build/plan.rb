@@ -28,7 +28,9 @@ module JFBuild
       entries = []
       archive_problem = source == :new ? project_issue : nil
       archive_status = source == :new ? (archive_problem ? 'error' : 'ready') : 'skipped'
-      entries << entry('archive', archive_status, source == :new ? archive_problem : '复用指定归档')
+      archive_entry = entry('archive', archive_status, source == :new ? archive_problem : '复用指定归档')
+      archive_entry['label'] = '清理并归档' if source == :new && Build::CLEAN_MODES.include?(mode)
+      entries << archive_entry
       label = { 'dev' => '导出开发 IPA', 'release' => '导出验收 IPA', 'appstore' => '导出商店 IPA' }.fetch(mode)
       export_problem = source == :ipa ? nil : (export_issue || (archive_problem && '需先填写归档所需配置'))
       export_status = source == :ipa ? 'skipped' : (export_problem ? 'error' : 'ready')
