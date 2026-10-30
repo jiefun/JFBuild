@@ -4,7 +4,8 @@ require 'tmpdir'
 
 module JFBuild
   class BundleGuard
-    PRIVATE_MARKER = /-----BEGIN (?:RSA |EC |OPENSSH |ENCRYPTED )?PRIVATE KEY-----/n
+    PRIVATE_KEY = /-----BEGIN ((?:RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY)-----\r?\n(?:(?:Proc-Type|DEK-Info):[^\r\n]*\r?\n)*\r?\n?[A-Za-z0-9+\/=\r\n]{64,}-----END \1-----/n
+    PRIVATE_KEY_OVERLAP = 64 * 1024
 
     def initialize(root, secrets: [], protected_files: [])
       @root = File.expand_path(root)
@@ -63,26 +64,30 @@ module JFBuild
     def reject_path!(path)
       components = path.tr('\\', '/').split('/')
       if path.start_with?('/') || components.include?('..') || components.include?('jfbuild') || path.match?(/\.(?:p8|p12|pfx)\z/i)
-        raise Error, '成品包含打包目录或私钥文件，已停止后续操作。'
+        raise Error, "成品包含打包目录或私钥文件：#{path}，已停止后续操作。"
       end
     end
 
     def check_stream!(stream, name)
       digest = Digest::SHA256.new
       tail = ''.b
-      overlap = [@secrets.map(&:bytesize).max || 0, 100].max
+      # 加密库可能含有 PEM 标识常量，只有完整的私钥数据块才视为私钥内容。
+      overlap = [@secrets.map(&:bytesize).max || 0, PRIVATE_KEY_OVERLAP].max
       while (chunk = stream.read(1024 * 1024)) && !chunk.empty?
         chunk = chunk.b
         digest.update(chunk)
         window = tail + chunk
-        if window.match?(PRIVATE_MARKER) || @secrets.any? { |secret| window.include?(secret) }
-          raise Error, '成品包含打包上传凭证内容，已停止后续操作。'
+        if window.match?(PRIVATE_KEY)
+          raise Error, "成品包含完整私钥内容：#{name}，已停止后续操作。"
+        end
+        if @secrets.any? { |secret| window.include?(secret) }
+          raise Error, "成品包含已配置的打包上传凭证：#{name}，已停止后续操作。"
         end
         tail = window.byteslice(-overlap, overlap) || window
       end
       # 描述文件是 Apple 正常签名产物的一部分，不作为凭证泄漏处理。
       return if File.basename(name) == 'embedded.mobileprovision'
-      raise Error, '成品包含打包专用配置或凭证文件，已停止后续操作。' if @hashes.include?(digest.hexdigest)
+      raise Error, "成品包含打包专用配置或凭证文件：#{name}，已停止后续操作。" if @hashes.include?(digest.hexdigest)
     end
   end
 end

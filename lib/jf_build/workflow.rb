@@ -227,7 +227,7 @@ module JFBuild
     end
 
     def result_entries
-      ordered_steps.reject { |name, _value| %w[check_archive check_ipa].include?(name) }.map do |name, value|
+      ordered_steps.reject { |name, value| %w[check_archive check_ipa].include?(name) && value['status'] == 'success' }.map do |name, value|
         { 'label' => STEP_NAMES.fetch(name, name), 'status' => value['status'], 'reason' => value['reason'] || value['error'] }
       end
     end
