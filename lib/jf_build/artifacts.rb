@@ -81,11 +81,11 @@ module JFBuild
       path
     end
 
-    def create(mode, settings, directory: nil, description: '')
+    def create(mode, settings, directory: nil, description: '', builder: nil)
       directory ||= new_directory
       record = { 'jbuild_record' => 1, 'project_root' => config.root, 'created_at' => Time.now.iso8601(6),
                  'mode' => mode, 'configuration' => settings.fetch('configuration'), 'export_method' => settings.fetch('export_method'),
-                 'directory' => directory, 'description' => description.to_s }
+                 'directory' => directory, 'description' => description.to_s, 'builder' => builder }
       save(record)
       record
     end

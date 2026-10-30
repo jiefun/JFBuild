@@ -24,6 +24,7 @@ module JFBuild
         setup!
         @report.merge!('mode' => mode, 'configuration' => settings.fetch('configuration'), 'description' => description,
                        'source' => ipa ? 'ipa' : (archive ? 'archive' : 'new'))
+        collect_build_info(new_build: @report['source'] == 'new')
         unless archive_only || export_only
           @plan = Plan.new(config, mode, overrides: @overrides, settings: settings).validate!(source: @report['source'].to_sym)
           @console.flow(@plan.steps(source: @report['source'].to_sym), prefix: '开始执行：', compact: true)
@@ -35,7 +36,8 @@ module JFBuild
           @build.resolve!
           @build.validate_signing!
           @catalog.prune_before_new!.each { |path| @io.puts("已清理最旧打包记录：#{path}") }
-          @record = @catalog.create(mode, settings, directory: output, description: @runner.redact(description))
+          @record = @catalog.create(mode, settings, directory: output, description: @runner.redact(description),
+                                    builder: @report['builder'])
         end
         info = nil
         begin
@@ -88,6 +90,7 @@ module JFBuild
         @output = @record ? @record.fetch('directory') : @catalog.new_directory
         setup!
         @report.merge!('mode' => @record && @record['mode'], 'description' => description, 'source' => 'upload-only')
+        collect_build_info
         @services.fetch(service).validate!
         case service
         when 'pgyer', 'appstore'
@@ -194,7 +197,30 @@ module JFBuild
 
     def upload_package(service, ipa, description)
       @report['distribution_type'] = Distribution.validate!(ipa, service)
-      service == 'pgyer' ? @services[service].upload(ipa, description) : @services[service].upload(ipa)
+      service == 'pgyer' ? @services[service].upload(ipa, build_description(description)) : @services[service].upload(ipa)
+    end
+
+    def collect_build_info(new_build: false)
+      if new_build
+        name, status = Open3.capture2e('git', '-C', config.root, 'config', 'user.name')
+        @report['builder'] = status.success? ? @runner.redact(name.encode('UTF-8', invalid: :replace, undef: :replace).gsub(/[[:cntrl:]]+/, ' ').strip) : nil
+      else
+        # 补传只使用原归档信息，不把上传者或当前配置当成打包信息。
+        @report['builder'] = @record && @record['builder']
+        @report['configuration'] = @record && @record['configuration']
+      end
+    rescue SystemCallError
+      @report['builder'] = nil
+    end
+
+    def build_info_lines
+      [['打包人', @report['builder']], ['构建类型', @report['configuration']]].map do |label, value|
+        "#{label}：#{value.to_s.strip.empty? ? '未记录' : value}"
+      end
+    end
+
+    def build_description(description)
+      (build_info_lines + ['', '更新内容：', description.to_s]).join("\n")
     end
 
     def summarize(info)
@@ -235,6 +261,7 @@ module JFBuild
     def notification
       app = @report['app'] || {}
       lines = ["#{app['name'] || 'iOS App'} #{app['version']} (#{app['build']})", "包类型：#{Plan::MODES[@report['mode']]}"]
+      lines.concat(build_info_lines)
       description = @report['description'].to_s
       lines << "更新内容：\n#{description}" unless description.strip.empty?
       ordered_steps.each do |name, value|
