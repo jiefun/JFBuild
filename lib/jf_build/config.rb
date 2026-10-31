@@ -12,6 +12,8 @@ module JFBuild
     MATERIAL_DIRECTORIES = %w[keys tools].freeze
     TEMPLATE = File.expand_path('../../templates/config.yml', __dir__)
     LAUNCHER_TEMPLATE = File.expand_path('../../templates/jbuild', __dir__)
+    SKILL_TEMPLATE = File.expand_path('../../templates/SKILL.md', __dir__)
+    SKILL_DIRECTORY = '.agents/skills/jbuild'.freeze
     LEGACY_LAUNCHER = <<~'SH'.freeze
       #!/bin/sh
       project_root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 1
@@ -69,6 +71,28 @@ module JFBuild
         end
       end
       directory
+    end
+
+    def self.install_skill(root)
+      root = File.realpath(root)
+      directory = root
+      SKILL_DIRECTORY.split('/').each do |name|
+        directory = File.join(directory, name)
+        begin
+          Dir.mkdir(directory)
+        rescue Errno::EEXIST
+        end
+        unless File.directory?(directory) && inside?(File.realpath(directory), root)
+          raise Error, '项目 Skill 目录必须位于项目内。'
+        end
+      end
+      path = File.join(directory, 'SKILL.md')
+      begin
+        File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o644) { |file| file.write(File.read(SKILL_TEMPLATE)) }
+      rescue Errno::EEXIST
+        # 保留项目已有的 Skill 入口。
+      end
+      path
     end
 
     def initialize(root)

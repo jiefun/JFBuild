@@ -21,6 +21,7 @@ module JFBuild
       existing = File.file?(File.join(root, Config::DIRECTORY, 'config.yml'))
       Config.bootstrap(root)
       if action == 'init' || !existing
+        skill = Config.install_skill(root)
         begin
           choices = Config.new(root).autofill!
           @console.line("已自动填写：#{choices.keys.join('、')}") unless choices.empty?
@@ -28,6 +29,7 @@ module JFBuild
           @console.line(error.message, 'skipped')
         end
         @console.line("#{existing ? '保留已有配置' : '已生成配置'}：#{root}/jfbuild/config.yml")
+        @console.line("Skill 入口：#{skill}")
         @console.line('请编辑 jfbuild/config.yml 后运行 ./jbuild。')
         return %w[init config].include?(action) ? 0 : 2
       end

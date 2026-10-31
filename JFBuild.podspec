@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name = 'JFBuild'
-  s.version = '0.1.6'
+  s.version = '0.2.0'
   s.summary = 'iOS 打包、导出与上传工具'
   s.homepage = 'https://github.com/jiefun/JFBuild'
   s.source = { :git => "#{s.homepage}.git", :tag => s.version.to_s }

@@ -12,6 +12,7 @@ description: 使用 JFBuild 为 iOS 项目完成接入、配置、归档、导�
 - 以 App 项目的 `Podfile` 所在目录为工作目录，不把 Skill 所在目录当作 App 目录。
 - 已有根目录 `jbuild` 时，先运行 `./jbuild --help`；后续使用这个入口。
 - 首次接入时，在现有 Podfile 中添加 `pod 'JFBuild'`，执行 `pod install`，再运行 `./Pods/JFBuild/jbuild init`。
+- `init` 生成项目的 `.agents/skills/jbuild/SKILL.md` 入口；它定位当前安装的完整 Skill，操作说明和 README 保留在组件中。已有项目入口会保留。
 - 本地 `:path` 安装不会生成 `Pods/JFBuild`。从 `Pods/Manifest.lock`（缺失时读 `Podfile.lock`）的 `EXTERNAL SOURCES` 中读取 JFBuild 的 `:path`，相对于 App 项目目录解析，用该源码目录下的 `jbuild init` 初始化。之后仍用 `./jbuild`。
 - 普通 Pod 的文档和模板位于 `Pods/JFBuild/`；本地依赖则读取上述源码目录中的文件。
 

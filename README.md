@@ -15,7 +15,7 @@ pod install
 ./Pods/JFBuild/jbuild init
 ```
 
-在 App 项目的 `Podfile` 所在目录执行上述命令。`init` 会生成 `jbuild`、`jfbuild/config.yml` 及材料目录，已有配置会保留。
+在 App 项目的 `Podfile` 所在目录执行上述命令。`init` 会生成 `jbuild`、`jfbuild/config.yml`、项目 Skill 入口及材料目录，已有配置和 Skill 入口会保留。
 
 工程和共享 App Scheme 只有一个时自动填写；有多个候选时写在对应字段上方的注释里，供选择填写。再次执行 `init` 只补充空字段，已有值保留。
 
@@ -23,6 +23,8 @@ pod install
 
 ```text
 App项目/
+├── .agents/
+│   └── skills/jbuild/SKILL.md # 项目 Skill 入口
 ├── Podfile
 ├── jbuild                  # 命令入口，由 init 生成
 ├── jfbuild/
@@ -166,9 +168,9 @@ pod update JFBuild
 
 ## AI 使用
 
-仓库提供 [jbuild Skill](skills/jbuild/SKILL.md)，用于帮助 AI 配置、打包、补传和排错。将 `skills/jbuild/` 安装到所用 AI 工具的技能目录，或让 AI 直接读取该文件。
+`init` 在项目的 `.agents/skills/jbuild/SKILL.md` 生成简短入口，可随项目 Git 共享。支持该目录的 AI 工具可发现它，其他工具也可直接读取此文件。
 
-普通 Pod 安装后，文件位于 `Pods/JFBuild/skills/jbuild/SKILL.md`；`pod install` 不会自动将它安装到 AI 工具中。
+入口根据 Pod 安装记录定位当前组件，兼容普通 Pod 和本地 `:path`。完整 [jbuild Skill](skills/jbuild/SKILL.md)、README 和配置模板仍保留在组件中，更新 Pod 后读取新安装版本的说明。再次 `init` 保留项目已有入口。
 
 ## 运行环境
 
