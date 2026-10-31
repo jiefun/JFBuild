@@ -49,18 +49,48 @@ def project_options(root, selected=''):
                 visit(child, path if node.tag == 'Group' and location else base)
 
         visit(workspace, container.parent)
+    project_paths = {project for project in project_paths if project.name != 'Pods.xcodeproj'}
     for project in project_paths:
         scheme_files.update(project.glob('xcshareddata/xcschemes/*.xcscheme'))
+    for container in set(containers) | project_paths:
+        scheme_files.update(container.glob('xcuserdata/*/xcschemes/*.xcscheme'))
     schemes = set()
+    defined_schemes = set()
     for path in scheme_files:
         try:
             entries = ET.parse(path).getroot().findall('./BuildAction/BuildActionEntries/BuildActionEntry')
         except (OSError, ET.ParseError):
             continue
+        defined_schemes.add(path.stem)
         if any(entry.get('buildForArchiving', 'YES') != 'NO' and
                any(ref.get('BuildableName', '').endswith('.app') for ref in entry.findall('BuildableReference'))
                for entry in entries):
             schemes.add(path.stem)
+    if selected:
+        try:
+            flag = '-workspace' if pathlib.Path(selected).suffix == '.xcworkspace' else '-project'
+            result = subprocess.run(
+                ['xcodebuild', flag, selected, '-list', '-json'], cwd=root,
+                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True, timeout=30)
+            info = json.loads(result.stdout)
+            available = set(info[flag[1:]]['schemes'])
+        except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError):
+            available = None
+        if available is not None:
+            # Xcode 自动生成的 Scheme 没有 XML 文件，按 App Target 识别并核对可用列表。
+            for project in project_paths:
+                try:
+                    result = subprocess.run(
+                        ['/usr/bin/plutil', '-convert', 'json', '-o', '-', str(project / 'project.pbxproj')],
+                        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True)
+                    objects = json.loads(result.stdout)['objects'].values()
+                except (OSError, subprocess.SubprocessError, ValueError, KeyError, TypeError):
+                    continue
+                schemes.update(target['name'] for target in objects
+                               if target.get('isa') == 'PBXNativeTarget'
+                               and target.get('productType') == 'com.apple.product-type.application'
+                               and target.get('name') and target['name'] not in defined_schemes)
+            schemes.intersection_update(available)
     return {'workspace': workspaces, 'project': projects, 'scheme': sorted(schemes), 'selected': selected}
 
 

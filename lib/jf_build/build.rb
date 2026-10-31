@@ -31,10 +31,10 @@ module JFBuild
       schemes = (parsed['workspace'] || parsed['project'] || {}).fetch('schemes', [])
       @scheme = config.value('scheme').to_s
       if @scheme.empty?
-        @scheme = choose('共享 Scheme', schemes)
+        @scheme = choose('Scheme', schemes)
         choices['scheme'] = @scheme
       elsif !schemes.include?(@scheme)
-        raise Error, '配置中的 Scheme 不存在，请更新 jfbuild/config.yml 的 scheme，并确认它是共享 Scheme。'
+        raise Error, '配置中的 Scheme 不存在，请更新 jfbuild/config.yml 的 scheme，并确认 Xcode 中可用。'
       end
       config.save_choices!(choices) unless choices.empty?
     rescue JSON::ParserError

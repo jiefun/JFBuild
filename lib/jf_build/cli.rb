@@ -70,7 +70,7 @@ module JFBuild
     def parser
       @parser = OptionParser.new do |args|
         args.banner = '用法：jbuild；快捷指令：jbuild dev／release／appstore'
-        args.separator '输入 1–4 选择操作；可用 --desc 传入更新内容。'
+        args.separator '输入菜单序号选择操作；可用 --desc 传入更新内容。'
         args.separator '初始化：jbuild init；配置更新：jbuild config update'
         args.separator '高级命令：archive、export、upload-pgyer、upload-appstore、upload-bugly、notify、check'
         args.on('--root=路径', 'App 项目目录') { |value| @options[:root] = value }
@@ -84,16 +84,21 @@ module JFBuild
     end
 
     def choose_action
+      items = @config.menu
+      return items.first if items.length == 1
       @console.line('请选择操作，输入序号（0 退出）：')
       @console.line('')
-      Plan::MODES.each_with_index do |(mode, label), index|
-        @console.option("#{index + 1}. #{label}", Plan.new(@config, mode, overrides: @overrides).steps)
+      items.each_with_index do |mode, index|
+        if mode == 'continue'
+          @console.line("#{index + 1}. 使用已有归档继续", 'title')
+          @console.line('   选择归档 → 选择从导出或上传开始')
+          @console.line('')
+        else
+          @console.option("#{index + 1}. #{Plan::MODES.fetch(mode)}", Plan.new(@config, mode, overrides: @overrides).steps)
+        end
       end
-      @console.line('4. 使用已有归档继续', 'title')
-      @console.line('   选择归档 → 选择从导出或上传开始')
-      @console.line('')
-      choice = @console.choose('请输入序号：', %w[1 2 3 4])
-      { '1' => 'dev', '2' => 'release', '3' => 'appstore', '4' => 'continue' }[choice]
+      choice = @console.choose('请输入序号：', (1..items.length).map(&:to_s))
+      items.fetch(choice.to_i - 1) if choice
     end
 
     def choose_record

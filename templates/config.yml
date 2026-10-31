@@ -3,6 +3,11 @@
 # 配置文件格式版本，需升级格式时执行 ./jbuild config update。
 config_version: 2
 
+# 菜单按填写顺序显示并编号；只有一项时，./jbuild 直接进入该流程。
+# dev 开发包、release 正式验收包、appstore App Store 包、continue 使用已有归档继续。
+# 例如 menu: [dev, release] 只显示两项；menu: [dev] 直接进入开发包流程。
+menu: [dev, release, appstore, continue]
+
 # 整个项目保留的有效归档份数，所有包类型合计；例如 2 表示保留最近两份。
 keep_archives: 2
 
@@ -11,8 +16,8 @@ keep_archives: 2
 workspace:
 project:
 
-# 填 Xcode 中的共享 Scheme 名称，例如 MyApp。
-# 在 Product > Scheme > Manage Schemes 中勾选 Shared；init 会识别唯一值或列出候选。
+# 填 Xcode 中可用的 App Scheme 名称，例如 MyApp；init 会自动填写唯一候选，多个候选列为注释。
+# 团队共用时，建议在 Product > Scheme > Manage Schemes 中勾选 Shared，并提交生成的 Scheme 文件。
 scheme:
 
 # configuration 填工程已有的构建配置名称；export_method 决定导出 IPA 的分发方式。
@@ -34,7 +39,7 @@ modes:
 
 hooks:
   # 目前仅支持 before_archive（新归档前）阶段；已有归档导出、IPA 补传不执行。
-  # 包类型：dev 开发包（菜单 1）、release 正式验收包（菜单 2）、appstore App Store 包（菜单 3）。
+  # 包类型：dev 开发包、release 正式验收包、appstore App Store 包。
   # 各包类型可单独配置脚本，未配置或留空时不执行；使用示例时取消注释，并准备对应脚本。
   # 命令由 /bin/sh 执行，工作目录为项目根目录；非零退出码会停止归档，日志保存在 logs/ 中。
   # 脚本可读取 JBUILD_MODE（包类型）、JBUILD_CONFIGURATION（构建配置）。

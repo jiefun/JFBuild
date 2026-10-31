@@ -17,7 +17,7 @@ pod install
 
 在 App 项目的 `Podfile` 所在目录执行上述命令。`init` 会生成 `jbuild`、`jfbuild/config.yml`、项目 Skill 入口及材料目录，已有配置和 Skill 入口会保留。
 
-工程和共享 App Scheme 只有一个时自动填写；有多个候选时写在对应字段上方的注释里，供选择填写。再次执行 `init` 只补充空字段，已有值保留。
+工程和可用 App Scheme 只有一个时自动填写；有多个候选时写在对应字段上方的注释里，供选择填写。Scheme 候选包含 Xcode 自动生成和本机可用的未共享 Scheme，排除框架。团队共用时建议在 Xcode 中勾选 Shared 并提交 Scheme 文件。再次执行 `init` 只补充空字段，已有值保留。
 
 初始化后的目录结构：
 
@@ -63,6 +63,14 @@ App项目/
 
 菜单显示简短步骤状态，选中后列出缺少的配置和跳过原因。
 
+在 `jfbuild/config.yml` 中设置显示的流程，按填写顺序编号：
+
+```yaml
+menu: [dev, release, appstore, continue]
+```
+
+例如 `[dev, release]` 只显示开发包和正式验收包；`[dev]` 直接进入开发包流程，照常填写更新内容。不填时使用默认四项；快捷命令不受菜单配置影响。
+
 也可以直接指定包类型：
 
 ```bash
@@ -96,7 +104,7 @@ App项目/
 
 | 功能 | 配置内容 |
 | --- | --- |
-| 工程 | `workspace` 或 `project`，以及共享 `scheme` |
+| 工程 | `workspace` 或 `project`，以及可用的 App `scheme` |
 | 签名 | Team ID、P12、密码、描述文件；已安装的签名材料可直接使用 |
 | 蒲公英 | API Key、安装方式、安装密码 |
 | App Store | Key ID、Issuer ID、P8 文件路径 |
@@ -107,7 +115,7 @@ Bugly 经典版默认使用组件内置工具，需要 Java；无需向 App 项�
 
 材料获取入口：[Apple 签名证书](https://developer.apple.com/documentation/xcode/sharing-your-teams-signing-certificates)、[Apple 描述文件](https://developer.apple.com/help/account/provisioning-profiles/edit-download-or-delete-profiles/)、[App Store API 密钥](https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api/)、[蒲公英 API](https://www.pgyer.com/doc/view/api)、[Bugly 专业版符号表工具](https://bugly.tds.tencent.com/docs/tutorial/symbol/tool/)、[钉钉群自定义机器人](https://opensource.dingtalk.com/developerpedia/docs/learn/bot/overview/)。
 
-归档需要可用工程、共享 Scheme、构建配置及有效签名；导出 IPA 需要有效归档，以及匹配包类型的签名证书和描述文件。签名已在 Xcode／本机配置好的，可以直接沿用。
+归档需要可用工程、App Scheme、构建配置及有效签名；导出 IPA 需要有效归档，以及匹配包类型的签名证书和描述文件。签名已在 Xcode／本机配置好的，可以直接沿用。
 
 `signing.p12` 支持单一路径配合 `p12_password`，或多个 `{path: 文件, password: 密码}` 条目。手动签名时，在 `provisioning_profiles` 中按包类型和 Bundle ID 填写描述文件名称或 UUID。
 
@@ -135,7 +143,7 @@ JFBuild 将该文件通过 `xcodebuild -xcconfig` 传入，归档结束后移除
 
 ## 历史归档
 
-菜单 `4` 按创建时间列出历史记录，包含包类型、版本、构建号、时间和当次归档的更新内容。选中后可重新导出 IPA，或上传该记录中已有的 IPA。
+“使用已有归档继续”（`continue`）按创建时间列出历史记录，包含包类型、版本、构建号、时间和当次归档的更新内容。选中后可重新导出 IPA，或上传该记录中已有的 IPA。
 
 产物和日志默认保存在 `build/jbuild/`。`record.json` 保存归档信息，`result.json` 保存最新执行结果，`results/` 保存历次结果。上传失败后可使用原产物补传。
 

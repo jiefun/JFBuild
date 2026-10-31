@@ -24,6 +24,7 @@ module JFBuild
       exec "$project_root/Pods/JFBuild/jbuild" --root="$project_root" "$@"
     SH
     SERVICES = %w[pgyer appstore bugly dingtalk].freeze
+    MENU_ITEMS = %w[dev release appstore continue].freeze
     CONFIG_VERSION = 2
     # 配置格式按版本逐级迁移。
     MIGRATIONS = {
@@ -146,6 +147,15 @@ module JFBuild
 
     def value(name)
       resolved_data[name]
+    end
+
+    def menu
+      items = value('menu')
+      items = MENU_ITEMS if items.nil?
+      unless items.is_a?(Array) && !items.empty? && items.all? { |item| MENU_ITEMS.include?(item) } && items.uniq == items
+        raise Error, 'menu 请填写非空列表，可选 dev、release、appstore、continue，且不能重复。'
+      end
+      items
     end
 
     def archive_limit

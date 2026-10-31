@@ -20,7 +20,8 @@ description: 使用 JFBuild 为 iOS 项目完成接入、配置、归档、导�
 
 编辑 App 项目的 `jfbuild/config.yml`，保留已有值和注释，只补充本次需要的配置。
 
-- `init` 会补充唯一的工程与共享 App Scheme；多个候选写在注释中。结合用户指定的 Target 和工程内容选择，不按候选顺序猜选。
+- `init` 会补充唯一的工程与可用 App Scheme，包括 Xcode 自动生成和未共享的 Scheme；多个候选写在注释中。结合用户指定的 Target 和工程内容选择，不按候选顺序猜选。
+- `menu` 按配置顺序显示流程，默认 `[dev, release, appstore, continue]`；只有一项时 `./jbuild` 直接进入该流程。AI 执行仍优先使用明确的快捷命令，不受菜单限制。
 - Apple P8 放在 `jfbuild/keys/`；需要导入签名材料时，可自行创建 `jfbuild/signing/`。Bugly 经典版默认使用内置 JAR，`tool_path` 可留空；专业版或自定义 JAR 可放在 `jfbuild/tools/` 并填写路径。路径相对于 App 项目目录，也支持绝对路径和 `~/`。
 - 已有可用的本机签名材料时，可以沿用工程签名。平台密钥、证书和密码使用用户提供或项目已有的材料，不填模板示例值冒充真实配置；不把材料目录加入 App Target。
 - 字段填写完整仅表示配置齐全，证书、账号权限及文件有效性仍由执行时验证。
